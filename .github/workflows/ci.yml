@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: ["0.x"]
+    branches: ["1.x"]
   pull_request:
 
 concurrency:

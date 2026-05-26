@@ -2,7 +2,7 @@ version: 2
 updates:
   - package-ecosystem: cargo
     directory: "/"
-    target-branch: "0.x"
+    target-branch: "1.x"
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
@@ -14,7 +14,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: "/"
-    target-branch: "0.x"
+    target-branch: "1.x"
     schedule:
       interval: weekly
     groups:

@@ -4,7 +4,7 @@
     <p align="center">
         <a href="https://github.com/laravel/moat/actions"><img alt="GitHub Workflow Status (main)" src="https://github.com/laravel/moat/actions/workflows/ci.yml/badge.svg"></a>
         <a href="https://github.com/laravel/moat/releases"><img alt="Latest Version" src="https://img.shields.io/github/v/release/laravel/moat"></a>
-        <a href="https://github.com/laravel/moat/blob/0.x/LICENSE"><img alt="License" src="https://img.shields.io/github/license/laravel/moat"></a>
+        <a href="https://github.com/laravel/moat/blob/1.x/LICENSE"><img alt="License" src="https://img.shields.io/github/license/laravel/moat"></a>
     </p>
 </p>
 
