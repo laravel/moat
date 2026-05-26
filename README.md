@@ -50,7 +50,9 @@ cargo build --release  # production release
 The binary will be in `./target/release`
 Now move the `moat` exe to a file in your path. 
 
-You can run tests with: `cargo test` and build documention with `cargo doc`
+To do this in one step use `cargo install --path .` and the package will be build and installed into `.cargo/bin` (which should already be on your path)
+
+Additionally, you can run tests with: `cargo test` and build documention with `cargo doc`
 
 ## Usage
 
