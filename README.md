@@ -31,11 +31,36 @@ brew install laravel/moat/moat
 
 Download the archive for your platform from the [releases page](https://github.com/laravel/moat/releases) and place `moat` on your `PATH`.
 
+### Build from Source / Contribution
+
+To build the project from source you will need to have [rust installed](https://rust-lang.org/tools/install/).
+
+Once rust is installed, fork and clone the project to have a copy on your system
+
+`git clone git@github.com:laravel/moat.git`
+
+From inside the moat directory you can now compile and test `moat`
+
+```sh
+cd moat
+cargo build # debug build
+cargo build --release  # production release
+```
+
+The binary will be in `./target/release`
+Now move the `moat` exe to a file in your path. 
+
+You can run tests with: `cargo test` and build documention with `cargo doc`
+
 ## Usage
 
 ```bash
 moat <account>
 ```
+
+
+
+
 
 `<account>` can be a GitHub organization, a user, or an `<owner>/<repo>` slug.
 
