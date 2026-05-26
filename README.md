@@ -58,10 +58,6 @@ You can run tests with: `cargo test` and build documention with `cargo doc`
 moat <account>
 ```
 
-
-
-
-
 `<account>` can be a GitHub organization, a user, or an `<owner>/<repo>` slug.
 
 ```bash
