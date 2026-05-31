@@ -585,7 +585,7 @@ pub fn format_no_token_error(detail: &str) -> AuthError {
             AuthErrorLine::Blank,
             AuthErrorLine::Numbered(
                 2,
-                "Or set a personal access token from https://github.com/settings/tokens:"
+                "Or set a personal access token from https://github.com/settings/tokens :"
                     .to_string(),
             ),
             AuthErrorLine::Code("export GITHUB_TOKEN=<your-token>".to_string()),
