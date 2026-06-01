@@ -31,6 +31,32 @@ brew install laravel/moat/moat
 
 Download the archive for your platform from the [releases page](https://github.com/laravel/moat/releases) and place `moat` on your `PATH`.
 
+#### Linux
+
+To quickly install [Moat v1.0.5](https://github.com/laravel/moat/releases/download/v1.0.5/moat-1.0.5-x86_64-unknown-linux-gnu.tar.gz) on Linux, run:
+
+```bash
+curl -sL "https://github.com/laravel/moat/releases/download/v1.0.5/moat-1.0.5-x86_64-unknown-linux-gnu.tar.gz" -o moat.tar.gz
+tar -xzf moat.tar.gz
+sudo mv moat-1.0.5-x86_64-unknown-linux-gnu/moat /usr/local/bin/moat
+rm moat.tar.gz moat-1.0.5-x86_64-unknown-linux-gnu
+```
+
+If your machine uses an ARM processor (like AWS Graviton or a Raspberry Pi) instead of Intel/AMD, change all `x86_64` to `aarch64` in the commands above.
+
+#### Windows
+
+To quickly install [Moat v1.0.5](https://github.com/laravel/moat/releases/download/v1.0.5/moat-1.0.5-x86_64-pc-windows-msvc.zip) on Windows, run:
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/laravel/moat/releases/download/v1.0.5/moat-1.0.5-x86_64-pc-windows-msvc.zip" -OutFile "moat.zip"
+Expand-Archive -Path "moat.zip" -DestinationPath "$env:USERPROFILE\moat" -Force
+Move-Item -Path "$env:USERPROFILE\moat\*\moat.exe" -Destination "$env:USERPROFILE\moat\moat.exe" -Force
+[Environment]::SetEnvironmentVariable("PATH", [Environment]::GetEnvironmentVariable("PATH", "User") + ";$env:USERPROFILE\moat", "User")
+Remove-Item "moat.zip"
+
+```
+
 ## Usage
 
 ```bash
