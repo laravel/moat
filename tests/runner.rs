@@ -191,6 +191,28 @@ async fn run_repo_checks_completes_against_fake_client() {
 }
 
 #[tokio::test]
+async fn list_repos_excludes_security_advisory_forks() {
+    let org = "acme";
+    let client = FakeGitHubClient::new().with_paginated(
+        format!("/orgs/{org}/repos?type=all"),
+        vec![
+            json!({ "name": "demo", "archived": false, "fork": false }),
+            json!({
+                "name": "public-php-workflow-ghsa-8xq3-q5v5-wg6h",
+                "archived": false,
+                "fork": false
+            }),
+        ],
+    );
+
+    let repos = runner::list_repos(&client, org, AccountKind::Organization)
+        .await
+        .unwrap();
+    let names: Vec<&str> = repos.iter().map(|r| r.name.as_str()).collect();
+    assert_eq!(names, vec!["demo"]);
+}
+
+#[tokio::test]
 async fn invalid_moat_toml_aborts_the_run() {
     let client = stub_org("acme").with_raw(
         "/repos/acme/demo/contents/moat.toml",

@@ -20,6 +20,20 @@ pub fn noun<'a>(count: usize, singular: &'a str, plural: &'a str) -> &'a str {
     if count == 1 { singular } else { plural }
 }
 
+pub fn is_security_advisory_fork(name: &str) -> bool {
+    // Take the segment after the last `-ghsa-` marker and confirm it is a bare
+    // `xxxx-xxxx-xxxx` advisory id (three groups of four alphanumeric chars).
+    let lower = name.to_ascii_lowercase();
+    let Some((_, id)) = lower.rsplit_once("-ghsa-") else {
+        return false;
+    };
+    let groups: Vec<&str> = id.split('-').collect();
+    groups.len() == 3
+        && groups
+            .iter()
+            .all(|g| g.len() == 4 && g.bytes().all(|b| b.is_ascii_alphanumeric()))
+}
+
 pub fn repos_word(count: usize) -> &'static str {
     if count == 1 {
         "repository"
@@ -351,5 +365,30 @@ pub(crate) struct CollaboratorPerms {
 impl CollaboratorPerms {
     pub fn is_more_than_read(&self) -> bool {
         self.admin || self.maintain || self.push || self.triage
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_security_advisory_fork;
+
+    #[test]
+    fn detects_github_advisory_temp_fork_names() {
+        assert!(is_security_advisory_fork(
+            "public-php-workflow-ghsa-8xq3-q5v5-wg6h"
+        ));
+        assert!(is_security_advisory_fork("moat-ghsa-abcd-1234-wxyz"));
+        // Case-insensitive on the marker.
+        assert!(is_security_advisory_fork("Repo-GHSA-8xq3-q5v5-wg6h"));
+    }
+
+    #[test]
+    fn leaves_ordinary_repos_alone() {
+        assert!(!is_security_advisory_fork("ghsa-toolkit"));
+        assert!(!is_security_advisory_fork("my-ghsa-helper"));
+        // Right marker, wrong id shape (groups not 4 chars / wrong count).
+        assert!(!is_security_advisory_fork("repo-ghsa-8xq3-q5v5"));
+        assert!(!is_security_advisory_fork("repo-ghsa-8xq3-q5v5-wg6h-extra"));
+        assert!(!is_security_advisory_fork("repo-ghsa-8xq-q5v5-wg6h"));
     }
 }

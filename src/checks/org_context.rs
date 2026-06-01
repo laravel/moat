@@ -654,7 +654,10 @@ async fn fetch_outside_collaborators(client: &impl GitHubClient, org: &str) -> R
     let logins = all;
 
     let repos: Vec<RepoBrief> = match repos_resp {
-        Fetch::Ok(v) => v.into_iter().filter(|r| !r.fork && !r.archived).collect(),
+        Fetch::Ok(v) => v
+            .into_iter()
+            .filter(|r| !r.fork && !r.archived && !common::is_security_advisory_fork(&r.name))
+            .collect(),
         Fetch::Forbidden | Fetch::NotFound => {
             return Err(permission_error(
                 "repository list for outside collaborator scan",

@@ -700,7 +700,9 @@ pub async fn list_repos(
     };
     Ok(listings
         .into_iter()
-        .filter(|r| !r.fork && !r.archived)
+        .filter(|r| {
+            !r.fork && !r.archived && !crate::checks::common::is_security_advisory_fork(&r.name)
+        })
         .collect())
 }
 
