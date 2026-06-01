@@ -30,8 +30,8 @@ user-login = "hsivonen"
 user-name = "Henri Sivonen"
 
 [[publisher.unicode-segmentation]]
-version = "1.13.2"
-when = "2026-03-26"
+version = "1.13.3"
+when = "2026-06-01"
 user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
