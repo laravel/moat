@@ -46,8 +46,12 @@ moat <owner>/<repo>
 
 ### Options
 
+- `--public` — audit only public repositories.
+- `--private` — audit only private repositories.
 - `-v`, `--verbose` — display all collaborators and members instead of truncating the list.
 - `--theme <auto|dark|light>` — color theme. Defaults to `auto`, which detects the terminal background via `COLORFGBG`.
+- `--format <pretty|json|markdown>` — output format. Defaults to `pretty`, which prints the styled terminal report; `json` and `markdown` suppress all panels and emit a machine-readable report on stdout instead.
+- `--self-update` — download and install the latest released version of Moat, then exit.
 - `-h`, `--help` — print help.
 - `-V`, `--version` — print version.
 
