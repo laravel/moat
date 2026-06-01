@@ -114,6 +114,8 @@ async fn run() -> Result<i32> {
     let cli::Cli {
         account,
         verbose,
+        public,
+        private,
         self_update: _,
         help: _,
         version: _,
@@ -121,6 +123,12 @@ async fn run() -> Result<i32> {
         format,
     } = cli;
     let account = account.expect("clap guarantees account is present unless --self-update");
+
+    let visibility = match (public, private) {
+        (true, _) => runner::VisibilityFilter::Public,
+        (_, true) => runner::VisibilityFilter::Private,
+        _ => runner::VisibilityFilter::All,
+    };
 
     let pretty = matches!(format, cli::Format::Pretty);
 
@@ -141,6 +149,11 @@ async fn run() -> Result<i32> {
     if let Some((owner, repo)) = account.split_once('/') {
         if owner.is_empty() || repo.is_empty() || repo.contains('/') {
             anyhow::bail!("Invalid target `{account}` — expected `owner/repo` or `account`.");
+        }
+        if public || private {
+            anyhow::bail!(
+                "`--public` and `--private` filter the repositories of an account or organization; they can't be used when auditing a single `owner/repo`."
+            );
         }
         let listing = runner::ensure_viewer_can_audit_repo(&client, owner, repo).await?;
         runner::verify_token_for_target(
@@ -185,7 +198,7 @@ async fn run() -> Result<i32> {
 
         let do_org = matches!(kind, AccountKind::Organization);
 
-        let listings = runner::list_repos(&client, &account, kind).await?;
+        let listings = runner::list_repos(&client, &account, kind, visibility).await?;
 
         if pretty {
             let mut total_ticks = 1 + runner::REPO_TICKS * listings.len();

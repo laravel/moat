@@ -681,10 +681,33 @@ pub const ORG_TICKS: usize = 11;
 /// How many progress ticks a per-repo scan emits (excluding the initial "scanning N" tick).
 pub const REPO_TICKS: usize = 15;
 
+/// Filters the repositories to audit by visibility.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum VisibilityFilter {
+    /// Audit both public and private repositories.
+    #[default]
+    All,
+    /// Audit only public repositories.
+    Public,
+    /// Audit only private repositories.
+    Private,
+}
+
+impl VisibilityFilter {
+    fn matches(self, private: bool) -> bool {
+        match self {
+            VisibilityFilter::All => true,
+            VisibilityFilter::Public => !private,
+            VisibilityFilter::Private => private,
+        }
+    }
+}
+
 pub async fn list_repos(
     client: &impl GitHubClient,
     account: &str,
     kind: AccountKind,
+    visibility: VisibilityFilter,
 ) -> Result<Vec<RepoListing>> {
     let listing_path = match kind {
         AccountKind::Organization => format!("/orgs/{account}/repos?type=all"),
@@ -701,7 +724,10 @@ pub async fn list_repos(
     Ok(listings
         .into_iter()
         .filter(|r| {
-            !r.fork && !r.archived && !crate::checks::common::is_security_advisory_fork(&r.name)
+            !r.fork
+                && !r.archived
+                && !crate::checks::common::is_security_advisory_fork(&r.name)
+                && visibility.matches(r.private)
         })
         .collect())
 }
@@ -719,7 +745,7 @@ pub async fn fetch_repo_contexts(
     account: &str,
     kind: AccountKind,
 ) -> Result<Vec<RepoContext>> {
-    let listings = list_repos(client, account, kind).await?;
+    let listings = list_repos(client, account, kind, VisibilityFilter::All).await?;
     fetch_contexts(client, account, listings).await
 }
 

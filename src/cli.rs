@@ -23,6 +23,14 @@ pub struct Cli {
     #[arg(short, long)]
     pub verbose: bool,
 
+    /// Audit only public repositories.
+    #[arg(long, conflicts_with = "private")]
+    pub public: bool,
+
+    /// Audit only private repositories.
+    #[arg(long, conflicts_with = "public")]
+    pub private: bool,
+
     /// Download and install the latest released version of moat, then exit.
     #[arg(long)]
     pub self_update: bool,

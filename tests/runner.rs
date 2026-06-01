@@ -205,11 +205,49 @@ async fn list_repos_excludes_security_advisory_forks() {
         ],
     );
 
-    let repos = runner::list_repos(&client, org, AccountKind::Organization)
-        .await
-        .unwrap();
+    let repos = runner::list_repos(
+        &client,
+        org,
+        AccountKind::Organization,
+        runner::VisibilityFilter::All,
+    )
+    .await
+    .unwrap();
     let names: Vec<&str> = repos.iter().map(|r| r.name.as_str()).collect();
     assert_eq!(names, vec!["demo"]);
+}
+
+#[tokio::test]
+async fn list_repos_filters_by_visibility() {
+    let org = "acme";
+    let repos_json = vec![
+        json!({ "name": "open", "archived": false, "fork": false, "private": false }),
+        json!({ "name": "closed", "archived": false, "fork": false, "private": true }),
+    ];
+    let path = format!("/orgs/{org}/repos?type=all");
+
+    let names = |visibility| {
+        let client = FakeGitHubClient::new().with_paginated(path.clone(), repos_json.clone());
+        async move {
+            let repos = runner::list_repos(&client, org, AccountKind::Organization, visibility)
+                .await
+                .unwrap();
+            repos
+                .iter()
+                .map(|r| r.name.clone())
+                .collect::<Vec<String>>()
+        }
+    };
+
+    assert_eq!(
+        names(runner::VisibilityFilter::All).await,
+        vec!["open", "closed"]
+    );
+    assert_eq!(names(runner::VisibilityFilter::Public).await, vec!["open"]);
+    assert_eq!(
+        names(runner::VisibilityFilter::Private).await,
+        vec!["closed"]
+    );
 }
 
 #[tokio::test]
