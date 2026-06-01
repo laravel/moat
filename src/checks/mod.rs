@@ -224,7 +224,7 @@ pub static CHECKS: &[Check] = &[
         applies_to_repo: Some(public_only),
         org_only: false,
         ruleset_based: false,
-        repo_link_path: None,
+        repo_link_path: Some("/settings/actions"),
     },
     Check {
         id: "repositories_commits_are_signed",
