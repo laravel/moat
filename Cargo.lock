@@ -1324,7 +1324,7 @@ dependencies = [
 
 [[package]]
 name = "moat"
-version = "1.0.7"
+version = "1.0.8"
 dependencies = [
  "anyhow",
  "assert_cmd",

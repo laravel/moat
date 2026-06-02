@@ -1,6 +1,6 @@
 [package]
 name = "moat"
-version = "1.0.7"
+version = "1.0.8"
 edition = "2024"
 rust-version = "1.88"
 description = "Moat reviews the security posture of your GitHub organization and repositories, then surfaces recommendations to consider. "
