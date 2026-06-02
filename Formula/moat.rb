@@ -6,24 +6,24 @@
 class Moat < Formula
   desc "security posture auditing for your github organization & repositories"
   homepage "https://github.com/laravel/moat"
-  version "1.0.7"
+  version "1.0.8"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/laravel/moat/releases/download/v#{version}/moat-#{version}-aarch64-apple-darwin.tar.gz"
-      sha256 "1401c684df2abdc4818d805684e163d69b9edf49c7acd4e5ce474fd70434e324"
+      sha256 "6c42a42eeca99e480393c6fc9739bbbf40871ef02b020006aee9e58553f4332f"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/laravel/moat/releases/download/v#{version}/moat-#{version}-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "d189a5c2dd19d3215d0ce94d27185eb06e8d67262839e8767d6631377f05d557"
+      sha256 "e27109ffb0538cd73f36d5885418178aba92e90c137d7c1c535187b65f2499c0"
     end
     on_intel do
       url "https://github.com/laravel/moat/releases/download/v#{version}/moat-#{version}-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "835aae3644a1f756466db4608d6cac87c691444fb743d02808276a09b9dc8a75"
+      sha256 "3ad5b451025b6c98b9a0ec8fbff23d8615c5a031b317607e6af78f8635a1eb0b"
     end
   end
 
