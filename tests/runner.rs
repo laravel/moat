@@ -190,6 +190,45 @@ async fn run_repo_checks_completes_against_fake_client() {
     runner::render_checks_panel(&results, None, "test-owner", contexts.len(), false);
 }
 
+fn security_policy_status(contexts: &[moat::checks::RepoContext]) -> Status {
+    let ctx = runner::CheckContext {
+        org: None,
+        repos: contexts,
+    };
+    runner::run_checks(&ctx)
+        .into_iter()
+        .find(|r| r.check.id == "repositories_have_security_policy")
+        .expect("security policy check present")
+        .status
+}
+
+#[tokio::test]
+async fn repo_inherits_security_policy_from_org_dot_github_repo() {
+    // `demo` ships no SECURITY.md of its own, but the org's special `.github`
+    // repository publishes one (here under its `.github/` directory). GitHub
+    // serves that as `demo`'s security policy, so the check must pass via the
+    // inherited fallback rather than flagging the repo as missing one.
+    let client = stub_org("acme").with_raw(
+        "/repos/acme/.github/contents/.github/SECURITY.md",
+        "# Security Policy\n",
+    );
+    let contexts = runner::fetch_repo_contexts(&client, "acme", AccountKind::Organization)
+        .await
+        .unwrap();
+    assert_eq!(security_policy_status(&contexts), Status::Pass);
+}
+
+#[tokio::test]
+async fn repo_without_own_or_inherited_security_policy_fails() {
+    // No SECURITY.md on the repo and no `.github` repo fallback — the check
+    // should still fail, confirming the fallback doesn't mask a genuine miss.
+    let client = stub_org("acme");
+    let contexts = runner::fetch_repo_contexts(&client, "acme", AccountKind::Organization)
+        .await
+        .unwrap();
+    assert_eq!(security_policy_status(&contexts), Status::Fail);
+}
+
 #[tokio::test]
 async fn list_repos_excludes_security_advisory_forks() {
     let org = "acme";

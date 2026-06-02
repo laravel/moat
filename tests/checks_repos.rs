@@ -323,9 +323,14 @@ async fn repo_context_fetch_happy_path() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
 
     assert!(matches!(
         &r.branch_protections.branches[..],
@@ -342,6 +347,54 @@ async fn repo_context_fetch_happy_path() {
     assert!(matches!(r.secret_scanning, FeatureState::Enabled));
     assert!(matches!(r.push_protection, FeatureState::Enabled));
     assert!(matches!(r.dependabot_alerts, FeatureState::Enabled));
+}
+
+#[tokio::test]
+async fn repo_context_fetch_inherits_org_default_security_md() {
+    // The repo has no SECURITY.md of its own (happy_path_client seeds none), so
+    // fetch must fall back to the owner's `.github` default passed in here.
+    let client = happy_path_client();
+    let sa = SecurityAndAnalysis {
+        secret_scanning: Some(FeatureStatus {
+            status: "enabled".into(),
+        }),
+        secret_scanning_push_protection: Some(FeatureStatus {
+            status: "enabled".into(),
+        }),
+    };
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Present,
+    )
+    .await
+    .unwrap();
+    assert_eq!(r.security_md, FilePresence::Present);
+}
+
+#[tokio::test]
+async fn repo_context_fetch_uses_own_security_md_over_absent_org_default() {
+    // The repo ships its own SECURITY.md, so it passes on its own merit even
+    // when the owner has no `.github` default to inherit.
+    let client = happy_path_client().with_raw("/repos/acme/demo/contents/SECURITY.md", "# Sec\n");
+    let sa = SecurityAndAnalysis {
+        secret_scanning: Some(FeatureStatus {
+            status: "enabled".into(),
+        }),
+        secret_scanning_push_protection: Some(FeatureStatus {
+            status: "enabled".into(),
+        }),
+    };
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
+    assert_eq!(r.security_md, FilePresence::Present);
 }
 
 #[tokio::test]
@@ -376,9 +429,14 @@ async fn repo_context_fetch_unprotected_when_protection_missing() {
             status: "disabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(
         &r.branch_protections.branches[..],
         [(_, BranchProtectionState::Unprotected)]
@@ -421,9 +479,14 @@ async fn repo_context_fetch_plan_gated_private_repo_marks_scan_and_push_plan_gat
             status: "disabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
 
     assert!(matches!(
         &r.branch_protections.branches[..],
@@ -439,7 +502,7 @@ async fn repo_context_fetch_forks_are_rejected() {
     let client = FakeGitHubClient::new();
     let mut l = listing(Some("main"), None);
     l.fork = true;
-    let err = RepoContext::fetch(&client, "acme", l)
+    let err = RepoContext::fetch(&client, "acme", l, FilePresence::Absent)
         .await
         .err()
         .expect("expected fork to be rejected");
@@ -474,9 +537,14 @@ async fn repo_context_fetch_direct_collaborators_populated() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(r.direct_collaborators, vec!["alice".to_string()]);
 }
@@ -501,7 +569,9 @@ async fn repo_context_fetch_direct_collaborators_public_repo_filters_read_only()
     };
     let mut l = listing(Some("main"), Some(sa));
     l.private = false;
-    let r = RepoContext::fetch(&client, "acme", l).await.unwrap();
+    let r = RepoContext::fetch(&client, "acme", l, FilePresence::Absent)
+        .await
+        .unwrap();
 
     assert_eq!(r.direct_collaborators, vec!["writer".to_string()]);
 }
@@ -519,10 +589,15 @@ async fn repo_context_fetch_direct_collaborators_forbidden_bails() {
             status: "enabled".into(),
         }),
     };
-    let err = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .err()
-        .expect("expected bail");
+    let err = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .err()
+    .expect("expected bail");
     assert!(err.to_string().contains("direct collaborators"));
 }
 
@@ -621,9 +696,14 @@ async fn repo_context_fetch_sha_pinning_enforced() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(r.sha_pinning, SHAPinningState::Enforced));
 }
 
@@ -641,9 +721,14 @@ async fn repo_context_fetch_sha_pinning_not_enforced() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(r.sha_pinning, SHAPinningState::NotEnforced));
 }
 
@@ -658,10 +743,15 @@ async fn repo_context_fetch_sha_pinning_bails_when_endpoint_missing() {
             status: "enabled".into(),
         }),
     };
-    let err = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .err()
-        .expect("expected bail");
+    let err = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .err()
+    .expect("expected bail");
     assert!(err.to_string().to_ascii_lowercase().contains("sha pinning"));
 }
 
@@ -1067,10 +1157,15 @@ async fn repo_context_fetch_bails_on_forbidden_workflow_token() {
             status: "enabled".into(),
         }),
     };
-    let err = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .err()
-        .expect("expected bail on 403");
+    let err = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .err()
+    .expect("expected bail on 403");
     assert!(
         err.to_string().contains("workflow token"),
         "unexpected error: {err}"
@@ -1091,9 +1186,14 @@ async fn dependabot_security_updates_enabled_when_endpoint_reports_true() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(
         r.dependabot_security_updates,
         FeatureState::Enabled
@@ -1114,9 +1214,14 @@ async fn dependabot_security_updates_disabled_when_endpoint_reports_false() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(
         r.dependabot_security_updates,
         FeatureState::Disabled
@@ -1134,9 +1239,14 @@ async fn dependabot_security_updates_disabled_when_endpoint_404() {
             status: "enabled".into(),
         }),
     };
-    let r = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .unwrap();
+    let r = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .unwrap();
     assert!(matches!(
         r.dependabot_security_updates,
         FeatureState::Disabled
@@ -1154,10 +1264,15 @@ async fn dependabot_security_updates_bails_when_endpoint_forbidden() {
             status: "enabled".into(),
         }),
     };
-    let err = RepoContext::fetch(&client, "acme", listing(Some("main"), Some(sa)))
-        .await
-        .err()
-        .expect("expected bail");
+    let err = RepoContext::fetch(
+        &client,
+        "acme",
+        listing(Some("main"), Some(sa)),
+        FilePresence::Absent,
+    )
+    .await
+    .err()
+    .expect("expected bail");
     assert!(
         err.to_string().contains("dependabot security updates"),
         "unexpected error: {err}"

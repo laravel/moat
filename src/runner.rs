@@ -765,8 +765,21 @@ async fn fetch_contexts(
     let total = listings.len();
     panel::progress(&format!("Scanning {total} repositories"));
 
+    // GitHub serves the owner's `.github` repo SECURITY.md as the default for
+    // every repo without its own. Resolve it once (not per repo — they'd all
+    // hit the same endpoint) and share it so each repo's security-policy check
+    // honours the inherited fallback. Intentionally not progress-traced: it's a
+    // single owner-level lookup outside the per-repo tick budget.
+    let org_default_security_md = if listings.is_empty() {
+        crate::checks::repo_context::FilePresence::Absent
+    } else {
+        crate::checks::common::locate_org_default_security_md(client, account).await?
+    };
+
     let mut stream = stream::iter(listings)
-        .map(|listing| async move { RepoContext::fetch(client, account, listing).await })
+        .map(|listing| async move {
+            RepoContext::fetch(client, account, listing, org_default_security_md).await
+        })
         .buffer_unordered(CONCURRENCY);
 
     let mut contexts: Vec<RepoContext> = Vec::new();

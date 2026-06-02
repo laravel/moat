@@ -232,6 +232,7 @@ impl FeatureState {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum FilePresence {
     Present,
     Absent,
@@ -320,6 +321,22 @@ pub(crate) async fn locate_security_md(
             Fetch::Ok(_) => return Ok(FilePresence::Present),
             Fetch::Forbidden => return Err(permission_error("SECURITY.md", org, Some(repo))),
             Fetch::NotFound => {}
+        }
+    }
+    Ok(FilePresence::Absent)
+}
+
+pub(crate) async fn locate_org_default_security_md(
+    client: &impl GitHubClient,
+    owner: &str,
+) -> Result<FilePresence> {
+    for path in ["SECURITY.md", ".github/SECURITY.md", "docs/SECURITY.md"] {
+        match client
+            .get_presence(&format!("/repos/{owner}/.github/contents/{path}"))
+            .await?
+        {
+            Fetch::Ok(_) => return Ok(FilePresence::Present),
+            Fetch::Forbidden | Fetch::NotFound => {}
         }
     }
     Ok(FilePresence::Absent)

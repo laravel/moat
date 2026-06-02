@@ -1,5 +1,6 @@
 use moat::checks::repo_context::{
-    BranchProtectionState, FeatureStatus, RepoContext, RepoListing, SecurityAndAnalysis,
+    BranchProtectionState, FeatureStatus, FilePresence, RepoContext, RepoListing,
+    SecurityAndAnalysis,
 };
 use moat::support::github::FakeGitHubClient;
 use serde_json::json;
@@ -89,7 +90,7 @@ async fn classic_branch_protection_parses_pr_review_sub_flags() {
         }),
     );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];
@@ -103,7 +104,7 @@ async fn classic_branch_protection_defaults_pr_sub_flags_to_false() {
         json!({ "required_pull_request_reviews": {} }),
     );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];
@@ -121,7 +122,7 @@ async fn classic_branch_protection_pr_reviews_false_when_count_is_zero() {
         }),
     );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];
@@ -146,7 +147,7 @@ async fn repo_ruleset_parses_pr_review_sub_flags() {
             }]),
         );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];
@@ -165,7 +166,7 @@ async fn repo_ruleset_pr_reviews_false_when_count_is_zero() {
             }]),
         );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];
@@ -182,7 +183,7 @@ async fn repo_ruleset_pr_sub_flags_default_false_when_parameters_missing() {
             json!([{ "type": "pull_request" }]),
         );
 
-    let ctx = RepoContext::fetch(&client, "acme", listing())
+    let ctx = RepoContext::fetch(&client, "acme", listing(), FilePresence::Absent)
         .await
         .unwrap();
     let (_, state) = &ctx.branch_protections.branches[0];

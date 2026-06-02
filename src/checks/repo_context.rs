@@ -251,6 +251,7 @@ impl RepoContext {
         client: &impl GitHubClient,
         org: &str,
         mut repo: RepoListing,
+        org_default_security_md: FilePresence,
     ) -> Result<Self> {
         // Forks are filtered out before fetch (see runner::list_repos and
         // org_context::fetch_repo_briefs); if one slips through, refuse to
@@ -277,7 +278,7 @@ impl RepoContext {
             dependabot_security_updates,
             private_vulnerability_reporting,
             workflows,
-            security_md,
+            own_security_md,
             dependabot_config,
             webhooks,
             direct_collaborators,
@@ -364,6 +365,14 @@ impl RepoContext {
         )?;
 
         let branch_protections = BranchProtections { branches };
+
+        // A repo with no SECURITY.md of its own inherits the owner's `.github`
+        // repository default, which GitHub serves as that repo's security
+        // policy. Honour that fallback so an org-wide policy counts as present.
+        let security_md = match own_security_md {
+            FilePresence::Present => FilePresence::Present,
+            FilePresence::Absent => org_default_security_md,
+        };
 
         // List endpoints (`/users/{user}/repos`, `/orgs/{org}/repos`) sometimes
         // omit `security_and_analysis` — it only reliably appears on the repo

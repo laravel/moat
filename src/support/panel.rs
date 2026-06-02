@@ -230,7 +230,17 @@ fn palette() -> &'static Palette {
 /// checks the COLORFGBG env var (rxvt, konsole, terminator, gnome-terminal)
 /// and then falls back to an OSC 11 query (Apple Terminal, iTerm2, Alacritty,
 /// kitty, xterm). Returns false on non-terminals or when detection fails.
+///
+/// The OSC 11 fallback writes an escape sequence to stdout and reads the
+/// reply back from stdin, which requires switching the terminal into raw
+/// mode. When either stream is redirected (piped output, `cargo test`, CI)
+/// the handshake never completes and the terminal can be left in raw mode —
+/// printing a runaway staircase of un-returned newlines. So only probe when
+/// both stdin and stdout are interactive terminals; otherwise assume dark.
 fn detect_light_background() -> bool {
+    if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
+        return false;
+    }
     terminal_light::luma().map(|l| l > 0.5).unwrap_or(false)
 }
 
