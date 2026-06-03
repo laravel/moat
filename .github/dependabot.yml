@@ -14,14 +14,13 @@ updates:
           - patch
           - minor
 
-  - package-ecosystem: github-actions
+  - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "1.x"
     schedule:
-      interval: weekly
+      interval: "weekly"
     cooldown:
       default-days: 5
     groups:
-      actions:
+      github-actions:
         patterns:
           - "*"
