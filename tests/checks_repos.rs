@@ -11,6 +11,7 @@ use moat::checks::{
     repositories_commits_are_signed as signed_commits,
     repositories_dependabot_alerts_are_enabled as dependabot_alerts,
     repositories_dependabot_security_updates_are_enabled as dependabot_security_updates,
+    repositories_enforce_workflow_actions_sha_pinning as enforce_pinning,
     repositories_fork_pull_requests_require_approval as fork_pr_approval,
     repositories_have_dependabot_config as dependabot_config,
     repositories_have_no_direct_collaborators as direct_collaborators,
@@ -24,7 +25,7 @@ use moat::checks::{
     repositories_secret_push_protection_is_enabled as push_protection,
     repositories_secret_scanning_is_enabled as secret_scanning,
     repositories_webhooks_are_secure as webhooks_secure,
-    repositories_workflow_actions_are_pinned as pinned_actions,
+    repositories_workflow_actions_are_sha_pinned as pinned_actions,
     repositories_workflow_permissions_are_restricted as workflow_perms,
 };
 use moat::support::github::FakeGitHubClient;
@@ -628,9 +629,8 @@ fn protected_full(
 }
 
 #[test]
-fn pinned_actions_enforced_still_flags_unpinned_refs() {
+fn pinned_actions_flags_unpinned_refs() {
     let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
-    c.sha_pinning = SHAPinningState::Enforced;
     c.workflows = bw(vec![wf(
         "ci.yml",
         "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n",
@@ -642,47 +642,67 @@ fn pinned_actions_enforced_still_flags_unpinned_refs() {
 }
 
 #[test]
-fn pinned_actions_not_enforced_with_all_pinned_and_workflows_reports_enforcement_off() {
+fn pinned_actions_passes_when_all_refs_pinned() {
     let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
-    c.sha_pinning = SHAPinningState::NotEnforced;
     c.workflows = bw(vec![wf(
         "ci.yml",
         "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@1234567890123456789012345678901234567890\n",
     )]);
     let o = pinned_actions::repo_check(&c);
-    assert_eq!(o.status, Status::Fail);
-    assert_eq!(o.summary, "✗");
-    assert_eq!(o.items.len(), 1);
+    assert_eq!(o.status, Status::Pass);
 }
 
 #[test]
-fn pinned_actions_no_workflows_is_skipped_regardless_of_enforcement() {
+fn pinned_actions_no_workflows_is_skipped() {
     let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
-    c.sha_pinning = SHAPinningState::NotEnforced;
     c.workflows = bw(Vec::new());
     let o = pinned_actions::repo_check(&c);
     assert_eq!(o.status, Status::Skipped);
 }
 
 #[test]
-fn pinned_actions_not_enforced_with_unpinned_reports_combined_summary() {
+fn enforce_pinning_fails_when_setting_off() {
     let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
     c.sha_pinning = SHAPinningState::NotEnforced;
     c.workflows = bw(vec![wf(
         "ci.yml",
-        "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n      - uses: foo/bar@main\n",
+        "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@1234567890123456789012345678901234567890\n",
     )]);
-    let o = pinned_actions::repo_check(&c);
+    let o = enforce_pinning::repo_check(&c);
     assert_eq!(o.status, Status::Fail);
     assert_eq!(o.summary, "✗");
+    assert_eq!(o.items.len(), 1);
 }
 
 #[test]
-fn pinned_actions_no_workflows_is_skipped_when_enforced() {
+fn enforce_pinning_passes_when_setting_on() {
     let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
     c.sha_pinning = SHAPinningState::Enforced;
+    c.workflows = bw(vec![wf(
+        "ci.yml",
+        "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n",
+    )]);
+    let o = enforce_pinning::repo_check(&c);
+    assert_eq!(o.status, Status::Pass);
+}
+
+#[test]
+fn enforce_pinning_plan_gated_is_skipped() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.sha_pinning = SHAPinningState::PlanGated;
+    c.workflows = bw(vec![wf(
+        "ci.yml",
+        "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n",
+    )]);
+    assert_eq!(enforce_pinning::repo_check(&c).status, Status::Skipped);
+}
+
+#[test]
+fn enforce_pinning_no_workflows_is_skipped() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.sha_pinning = SHAPinningState::NotEnforced;
     c.workflows = bw(Vec::new());
-    assert_eq!(pinned_actions::repo_check(&c).status, Status::Skipped);
+    assert_eq!(enforce_pinning::repo_check(&c).status, Status::Skipped);
 }
 
 #[tokio::test]

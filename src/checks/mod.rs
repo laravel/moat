@@ -9,6 +9,7 @@ pub mod repositories_actions_workflow_token_is_read_only;
 pub mod repositories_commits_are_signed;
 pub mod repositories_dependabot_alerts_are_enabled;
 pub mod repositories_dependabot_security_updates_are_enabled;
+pub mod repositories_enforce_workflow_actions_sha_pinning;
 pub mod repositories_fork_pull_requests_require_approval;
 pub mod repositories_have_dependabot_config;
 pub mod repositories_have_no_direct_collaborators;
@@ -22,7 +23,7 @@ pub mod repositories_releases_are_immutable;
 pub mod repositories_secret_push_protection_is_enabled;
 pub mod repositories_secret_scanning_is_enabled;
 pub mod repositories_webhooks_are_secure;
-pub mod repositories_workflow_actions_are_pinned;
+pub mod repositories_workflow_actions_are_sha_pinned;
 pub mod repositories_workflow_permissions_are_restricted;
 
 pub use org_context::OrgContext;
@@ -332,17 +333,30 @@ pub static CHECKS: &[Check] = &[
         repo_link_path: Some("/security/policy"),
     },
     Check {
-        id: "repositories_workflow_actions_are_pinned",
-        label: repositories_workflow_actions_are_pinned::LABEL,
-        how_to_fix: repositories_workflow_actions_are_pinned::how_to_fix,
-        why_enable: repositories_workflow_actions_are_pinned::WHY_ENABLE,
+        id: "repositories_workflow_actions_are_sha_pinned",
+        label: repositories_workflow_actions_are_sha_pinned::LABEL,
+        how_to_fix: repositories_workflow_actions_are_sha_pinned::how_to_fix,
+        why_enable: repositories_workflow_actions_are_sha_pinned::WHY_ENABLE,
         org_eval: None,
-        repo_eval: Some(repositories_workflow_actions_are_pinned::repo_check),
-        description: repositories_workflow_actions_are_pinned::description,
+        repo_eval: Some(repositories_workflow_actions_are_sha_pinned::repo_check),
+        description: repositories_workflow_actions_are_sha_pinned::description,
         applies_to_repo: None,
         org_only: false,
         ruleset_based: false,
         repo_link_path: Some("/tree/{branch}/.github/workflows"),
+    },
+    Check {
+        id: "repositories_enforce_workflow_actions_sha_pinning",
+        label: repositories_enforce_workflow_actions_sha_pinning::LABEL,
+        how_to_fix: repositories_enforce_workflow_actions_sha_pinning::how_to_fix,
+        why_enable: repositories_enforce_workflow_actions_sha_pinning::WHY_ENABLE,
+        org_eval: None,
+        repo_eval: Some(repositories_enforce_workflow_actions_sha_pinning::repo_check),
+        description: repositories_enforce_workflow_actions_sha_pinning::description,
+        applies_to_repo: None,
+        org_only: false,
+        ruleset_based: false,
+        repo_link_path: Some("/settings/actions"),
     },
     Check {
         id: "repositories_pull_request_target_is_safe",

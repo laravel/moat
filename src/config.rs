@@ -89,7 +89,7 @@ mod tests {
 
     const KNOWN: &[&str] = &[
         "repositories_commits_are_signed",
-        "repositories_workflow_actions_are_pinned",
+        "repositories_workflow_actions_are_sha_pinned",
     ];
 
     #[test]
@@ -98,13 +98,13 @@ mod tests {
             r#"
                 [checks]
                 repositories_commits_are_signed = "off"
-                repositories_workflow_actions_are_pinned = "on"
+                repositories_workflow_actions_are_sha_pinned = "on"
             "#,
             KNOWN,
         )
         .unwrap();
         assert!(cfg.is_off("repositories_commits_are_signed"));
-        assert!(!cfg.is_off("repositories_workflow_actions_are_pinned"));
+        assert!(!cfg.is_off("repositories_workflow_actions_are_sha_pinned"));
     }
 
     #[test]

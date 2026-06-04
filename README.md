@@ -145,9 +145,13 @@ Direct collaborators bypass org-level team membership audits and outlive role ch
 
 Without a private intake, researchers either drop a public issue (advertising the bug before it's fixed) or give up; the private channel lets you triage and ship a patched release before exploitation.
 
-### `repositories_workflow_actions_are_pinned`
+### `repositories_workflow_actions_are_sha_pinned`
 
-Tags and branches are mutable — when `tj-actions/changed-files` was compromised in 2025, the attacker repointed the existing tags, so every workflow `@v1` instantly ran malicious code; SHA pins make that impossible.
+Tags and branches are mutable — when `tj-actions/changed-files` was compromised in 2025, the attacker repointed the existing tags, so every workflow `@v1` instantly ran malicious code; pinning each `uses:` ref to a full-length commit SHA makes that impossible.
+
+### `repositories_enforce_workflow_actions_sha_pinning`
+
+Pinning refs by hand isn't enough — anyone can later reintroduce a mutable `@v1` tag. The repo-level "Require actions to be pinned" setting blocks that: enforcement happens at run time, so a workflow with an unpinned ref fails to start until it's pinned.
 
 ### `repositories_pull_request_target_is_safe`
 
@@ -172,7 +176,7 @@ Pinning actions to SHAs is only safe if something keeps them up to date; without
 ```toml
 [checks]
 repositories_commits_are_signed = "off"
-repositories_workflow_actions_are_pinned = "off"
+repositories_workflow_actions_are_sha_pinned = "off"
 ```
 
 Values are `"on"` (default) or `"off"`. Use any check ID from the [Checks](#checks) section above.
