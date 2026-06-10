@@ -238,6 +238,61 @@ fn ref_is_untrusted(s: &str) -> bool {
     lc.contains("pull_request.head") || lc.contains("head_ref")
 }
 
+/// Collect every `uses:` value from the given job's steps.
+pub fn job_action_uses(doc: &Value, job_name: &str) -> Vec<String> {
+    let Value::Mapping(top) = doc else {
+        return Vec::new();
+    };
+    let Some(Value::Mapping(jobs)) = top.get(Value::String("jobs".into())) else {
+        return Vec::new();
+    };
+    let Some(job) = jobs.get(Value::String(job_name.into())) else {
+        return Vec::new();
+    };
+    let Value::Mapping(jm) = job else {
+        return Vec::new();
+    };
+    let Some(Value::Sequence(steps)) = jm.get(Value::String("steps".into())) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for step in steps {
+        if let Value::Mapping(step_map) = step
+            && let Some(Value::String(uses)) = step_map.get(Value::String("uses".into()))
+        {
+            out.push(uses.clone());
+        }
+    }
+    out
+}
+
+pub fn job_uses_action(doc: &Value, job_name: &str, action_prefix: &str) -> bool {
+    let Value::Mapping(top) = doc else {
+        return false;
+    };
+    let Some(Value::Mapping(jobs)) = top.get(Value::String("jobs".into())) else {
+        return false;
+    };
+    let Some(job) = jobs.get(Value::String(job_name.into())) else {
+        return false;
+    };
+    let Value::Mapping(jm) = job else {
+        return false;
+    };
+    let Some(Value::Sequence(steps)) = jm.get(Value::String("steps".into())) else {
+        return false;
+    };
+    for step in steps {
+        if let Value::Mapping(step_map) = step
+            && let Some(Value::String(uses)) = step_map.get(Value::String("uses".into()))
+            && uses.starts_with(action_prefix)
+        {
+            return true;
+        }
+    }
+    false
+}
+
 pub enum PermissionsBlock<'a> {
     Missing,
     WriteAll,

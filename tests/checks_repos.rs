@@ -1165,6 +1165,107 @@ fn workflow_perms_job_level_read_only_passes() {
     assert_eq!(workflow_perms::repo_check(&c).status, Status::Pass);
 }
 
+#[test]
+fn workflow_perms_deploy_pages_job_with_required_writes_passes() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        "on: push\npermissions:\n  contents: read\njobs:\n  deploy:\n    permissions:\n      pages: write\n      id-token: write\n    steps:\n      - uses: actions/deploy-pages@0000000000000000000000000000000000000000\n",
+    )]);
+    assert_eq!(workflow_perms::repo_check(&c).status, Status::Pass);
+}
+
+#[test]
+fn workflow_perms_deploy_pages_job_with_extra_writes_fails() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        "on: push\npermissions:\n  contents: read\njobs:\n  deploy:\n    permissions:\n      pages: write\n      id-token: write\n      contents: write\n    steps:\n      - uses: actions/deploy-pages@ffffffffffffffffffffffffffffffffffffffff\n",
+    )]);
+    let o = workflow_perms::repo_check(&c);
+    assert_eq!(o.status, Status::Fail);
+    assert!(o.items.iter().any(|i| i.contains("contents")));
+}
+
+#[test]
+fn workflow_perms_deploy_pages_job_top_level_write_still_fails() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        "on: push\npermissions:\n  contents: write\njobs:\n  deploy:\n    permissions:\n      pages: write\n      id-token: write\n    steps:\n      - uses: actions/deploy-pages@1111111111111111111111111111111111111111\n",
+    )]);
+    let o = workflow_perms::repo_check(&c);
+    assert_eq!(o.status, Status::Fail);
+    assert!(o.items.iter().any(|i| i.contains("contents")));
+}
+
+#[test]
+fn workflow_perms_deploy_pages_full_user_workflow_passes() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        r#"on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      - run: echo build
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+"#,
+    )]);
+    assert_eq!(workflow_perms::repo_check(&c).status, Status::Pass);
+}
+
+#[test]
+fn workflow_perms_deploy_pages_job_without_action_still_fails() {
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        "on: push\npermissions:\n  contents: read\njobs:\n  deploy:\n    permissions:\n      pages: write\n    steps:\n      - run: echo\n",
+    )]);
+    let o = workflow_perms::repo_check(&c);
+    assert_eq!(o.status, Status::Fail);
+    assert!(o.items.iter().any(|i| i.contains("pages")));
+}
+
+#[test]
+fn workflow_perms_custom_known_action_from_config_passes() {
+    let config = moat::config::Config::parse(
+        r#"
+            [workflow_permissions]
+            "my-org/custom-deploy" = ["deployments"]
+        "#,
+        &[],
+    )
+    .unwrap();
+    let mut c = ctx(BranchProtectionState::Unprotected, WorkflowTokenState::Read);
+    c.config = config;
+    c.workflows = bw(vec![wf(
+        "deploy.yml",
+        "on: push\npermissions:\n  contents: read\njobs:\n  deploy:\n    permissions:\n      deployments: write\n    steps:\n      - uses: my-org/custom-deploy@v1\n",
+    )]);
+    assert_eq!(workflow_perms::repo_check(&c).status, Status::Pass);
+}
+
 #[tokio::test]
 async fn repo_context_fetch_bails_on_forbidden_workflow_token() {
     let client =

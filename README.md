@@ -161,6 +161,8 @@ Pinning refs by hand isn't enough — anyone can later reintroduce a mutable `@v
 
 Without a declared `permissions:` block (or with `write-all`), every step in the workflow — including third-party actions — runs with full repo write access, turning any compromised action into a code-push primitive.
 
+Actions known to require write permissions (e.g. `actions/deploy-pages` needing `pages: write`) are automatically exempted. Add additional known actions per-repo via `[workflow_permissions]` in `moat.toml` — see [Configuration](#configuration).
+
 ### `repositories_have_security_policy`
 
 Without a disclosure channel, well-meaning researchers file public issues with full PoCs — `SECURITY.md` is what funnels them to a private channel before the world sees the bug.
@@ -186,6 +188,16 @@ You can also declare additional release branches that should be treated as prote
 ```toml
 release_branches = ["0.x", "1.x"]
 ```
+
+For the `repositories_workflow_permissions_are_restricted` check, you can declare actions whose job-level write scopes are known to be required. When a job uses one of these actions, its matching write scopes are exempted from the check. This is useful for deployment actions that legitimately need scopes like `pages: write` or `id-token: write`.
+
+```toml
+[workflow_permissions]
+"actions/deploy-pages" = ["pages", "id-token"]
+"aws-actions/configure-aws-credentials" = ["id-token"]
+```
+
+`actions/deploy-pages` is recognised out of the box; entries in `[workflow_permissions]` extend or override the built-in list.
 
 ## Checks skipped on GitHub Free
 

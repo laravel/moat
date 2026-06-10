@@ -35,6 +35,15 @@ impl std::error::Error for InvalidConfigError {
 pub struct Config {
     checks: HashMap<String, CheckState>,
     release_branches: Vec<String>,
+    workflow_permissions_known_actions: HashMap<String, Vec<String>>,
+}
+
+/// Built-in actions whose job-level write scopes are known to be required.
+/// Users can extend or override these in `moat.toml` under `[workflow_permissions]`.
+pub fn builtin_known_actions() -> HashMap<&'static str, Vec<&'static str>> {
+    let mut m = HashMap::new();
+    m.insert("actions/deploy-pages", vec!["pages", "id-token"]);
+    m
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +58,8 @@ struct RawConfig {
     checks: HashMap<String, String>,
     #[serde(default)]
     release_branches: Vec<String>,
+    #[serde(default)]
+    workflow_permissions: HashMap<String, Vec<String>>,
 }
 
 impl Config {
@@ -71,6 +82,7 @@ impl Config {
         Ok(Self {
             checks,
             release_branches: raw.release_branches,
+            workflow_permissions_known_actions: raw.workflow_permissions,
         })
     }
 
@@ -80,6 +92,20 @@ impl Config {
 
     pub fn release_branches(&self) -> &[String] {
         &self.release_branches
+    }
+
+    /// Look up the write scopes that are known to be required by a given action.
+    /// Built-in defaults are always present; user config entries override when
+    /// the same action prefix is specified.
+    pub fn known_action_writes(&self, action_uses: &str) -> Option<Vec<&str>> {
+        // User config takes precedence
+        if let Some(writes) = self.workflow_permissions_known_actions.get(action_uses) {
+            return Some(writes.iter().map(|s| s.as_str()).collect());
+        }
+        // Fall back to built-in defaults
+        builtin_known_actions()
+            .get(action_uses)
+            .map(|w| w.to_vec())
     }
 }
 
