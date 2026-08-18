@@ -77,7 +77,7 @@ jobs:
           fi
 
       - name: Generate build provenance attestation
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: ${{ env.ASSET }}
 
@@ -107,7 +107,7 @@ jobs:
           shasum -a 256 * > SHA256SUMS
 
       - name: Attest checksum file
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: dist/SHA256SUMS
 
