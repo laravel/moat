@@ -1372,9 +1372,9 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "owo-colors"
-version = "4.3.0"
+version = "4.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d211803b9b6b570f68772237e415a029d5a50c65d382910b879fb19d3271f94d"
+checksum = "13c45bb4a6ae1280ec0803b1ef9d3455eb50f01efbbe1447ab020f1d54fba9d8"
 
 [[package]]
 name = "parking_lot"
@@ -2237,13 +2237,13 @@ dependencies = [
 
 [[package]]
 name = "terminal-light"
-version = "1.9.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79307346b35bf24ed47c895c71f24653fab51c37576c7df7b5efdb8d519aee6d"
+checksum = "23493cf1be461ed14d2c81bf1d39dcea17c8095d4f623b1a1292ea212f6b88ed"
 dependencies = [
  "coolor",
  "crossterm",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "xterm-query",
 ]
 
